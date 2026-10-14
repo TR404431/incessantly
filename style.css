@@ -400,3 +400,9 @@ a.post__media:active img { filter: grayscale(1) brightness(.82); }
   .music { animation: none; }
   .music.is-playing .music__eq i { animation: none; transform: scaleY(.7); }
 }
+
+/* 手机端：播放器贴边一点 */
+@media (max-width: 520px) {
+  .phone-fixed { max-width: 100%; }
+  .music { right: 8px; }
+}

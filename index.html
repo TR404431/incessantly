@@ -14,9 +14,7 @@
       <section class="profile">
         <div class="cover">
           <img class="cover__img" src="img/bg.png" alt="" />
-          <!-- 所在团靠左 -->
           <p class="intro__sub">所在团：雾山影B 十年r 蛇漪 游烛</p>
-          <!-- 头像在封面内，卡在分界线 -->
           <span class="avatar avatar--lg"><img src="img/avatar.png" alt="" /></span>
         </div>
 
@@ -113,9 +111,19 @@
     </div>
   </div>
 
-  <button class="to-top" type="button" aria-label="回到顶部">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-  </button>
+  <!-- 与手机框同宽的固定容器，播放器在里面绝对定位 -->
+  <div class="phone-fixed">
+    <div class="music" id="music">
+      <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+      <button class="music__btn" id="musicBtn" type="button" title="音乐" aria-label="播放音乐" aria-pressed="false">
+        <svg class="music__ring" viewBox="0 0 48 48" aria-hidden="true">
+          <circle class="ring__track" cx="24" cy="24" r="22"></circle>
+          <circle class="ring__bar" id="musicBar" cx="24" cy="24" r="22"></circle>
+        </svg>
+        <span class="music__eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      </button>
+    </div>
+  </div>
 
   <canvas class="rain" aria-hidden="true"></canvas>
   <script src="script.js"></script>

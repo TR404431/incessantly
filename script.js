@@ -3,15 +3,10 @@
 
   var posts = Array.prototype.slice.call(document.querySelectorAll(".post"));
 
-  /* 滑到卡片时像收到微信消息一样“跳”出来。
-     入场用 CSS animation（而不是 transition）实现：
-     只要加上 in-view，动画就一定从 0% 播放，
-     不会因为首屏在第一次绘制前就加类而“直接显现、没有弹的效果”。 */
   if (!("IntersectionObserver" in window)) {
     posts.forEach(function (p) { p.classList.add("in-view"); });
   } else {
     var io = new IntersectionObserver(function (entries) {
-      // 同一批进入视口的卡片，按从上到下的顺序轻微错开
       var shown = entries.filter(function (e) { return e.isIntersecting; });
       shown.sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; });
       shown.forEach(function (entry, i) {
@@ -20,7 +15,6 @@
       });
 
       entries.forEach(function (entry) {
-        // 从下方完全离开时复位，下次滑回来可再次触发
         if (!entry.isIntersecting && entry.boundingClientRect.top > 0) {
           entry.target.classList.remove("in-view");
           entry.target.style.removeProperty("--d");
@@ -31,7 +25,6 @@
     posts.forEach(function (p) { io.observe(p); });
   }
 
-  /* 点击关键词方块，展开/收起里面的内容 */
   posts.forEach(function (post) {
     var btn = post.querySelector(".keyword");
     if (!btn) return;
@@ -40,19 +33,6 @@
       btn.setAttribute("aria-expanded", open ? "true" : "false");
     });
   });
-
-  /* 回到顶部按钮 */
-  var toTop = document.querySelector(".to-top");
-  if (toTop) {
-    var onScroll = function () {
-      toTop.classList.toggle("show", window.scrollY > 320);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    toTop.addEventListener("click", function () {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-  }
 })();
 
 /* ------- 一直下雨：全屏雨丝 + 玻璃水珠（不挡点击） ------- */
@@ -75,7 +55,6 @@
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
   function fade(a) { return clamp(a, 0, 1).toFixed(3); }
 
-  /* 雨丝：细长的下落线，尾部渐隐 */
   function makeStreak(anywhere) {
     return {
       x: rand(-40, W + 40),
@@ -87,13 +66,11 @@
     };
   }
 
-  /* 玻璃上的水珠：暗边 + 亮圈 + 高光点 */
   function makeBead() {
     var r = rand(0.9, 3.6);
     return { x: rand(0, W), y: rand(0, H), r: r, a: rand(0.12, 0.5) * (r > 2.2 ? 1 : 0.7) };
   }
 
-  /* 会顺着玻璃往下淌的水珠，身后留一条水痕 */
   function makeRunner(anywhere) {
     return {
       x: rand(0, W),
@@ -220,7 +197,6 @@
 
   if (!reduce) { raf = window.requestAnimationFrame(frame); }
 
-  /* 切到后台就暂停，省点电 */
   document.addEventListener("visibilitychange", function () {
     if (reduce) { return; }
     if (document.hidden) {
@@ -231,4 +207,111 @@
       raf = window.requestAnimationFrame(frame);
     }
   });
+})();
+
+/* ------- 右下角音乐播放器（进入页面自动播放） ------- */
+(function () {
+  "use strict";
+
+  var wrap = document.getElementById("music");
+  var btn = document.getElementById("musicBtn");
+  var audio = document.getElementById("bgm");
+  var bar = document.getElementById("musicBar");
+  if (!wrap || !btn || !audio) { return; }
+
+  var R = 22;
+  var C = 2 * Math.PI * R;
+  if (bar) {
+    bar.style.strokeDasharray = C.toFixed(2);
+    bar.style.strokeDashoffset = C.toFixed(2);
+  }
+
+  function setPlaying(on) {
+    wrap.classList.toggle("is-playing", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", on ? "暂停音乐" : "播放音乐");
+  }
+
+  function updateProgress() {
+    if (!bar) { return; }
+    var d = audio.duration;
+    var p = (d && isFinite(d)) ? Math.min(1, audio.currentTime / d) : 0;
+    bar.style.strokeDashoffset = (C * (1 - p)).toFixed(2);
+  }
+
+  function tryAutoPlay() {
+    audio.volume = 0.6;
+    var pr = audio.play();
+    if (pr && typeof pr.catch === "function") {
+      pr.catch(function () {
+        setPlaying(false);
+        var resume = function () {
+          audio.play().catch(function () {});
+          document.removeEventListener("click", resume);
+          document.removeEventListener("touchstart", resume);
+          document.removeEventListener("keydown", resume);
+        };
+        document.addEventListener("click", resume, { once: true });
+        document.addEventListener("touchstart", resume, { once: true });
+        document.addEventListener("keydown", resume, { once: true });
+      });
+    }
+  }
+
+  btn.addEventListener("click", function () {
+    if (audio.paused) {
+      var pr = audio.play();
+      if (pr && typeof pr.catch === "function") { pr.catch(function () { setPlaying(false); }); }
+    } else {
+      audio.pause();
+    }
+  });
+
+  audio.addEventListener("play", function () { setPlaying(true); });
+  audio.addEventListener("pause", function () { setPlaying(false); });
+  audio.addEventListener("timeupdate", updateProgress);
+  audio.addEventListener("loadedmetadata", updateProgress);
+  audio.addEventListener("ended", function () { setPlaying(false); updateProgress(); });
+  audio.addEventListener("error", function () { setPlaying(false); });
+
+  /* 第一次向下滑动时开始播放，之后再滑动不再触发 */
+  var armed = true;
+  var lastY = window.scrollY || 0;
+  window.addEventListener("scroll", function () {
+    var y = window.scrollY || window.pageYOffset || 0;
+    if (armed && y > lastY && y > 20) {
+      armed = false;
+      if (audio.paused) { tryAutoPlay(); }
+    }
+    lastY = y;
+  }, { passive: true });
+})();
+
+/* ------- 悬浮播放器夹在手机框内，不越过边框 ------- */
+(function () {
+  "use strict";
+
+  var phone = document.querySelector(".phone");
+  if (!phone) { return; }
+  var root = document.documentElement;
+  var pending = false;
+
+  function apply() {
+    pending = false;
+    var vh = window.innerHeight || root.clientHeight || 0;
+    var gap = vh - phone.getBoundingClientRect().bottom; /* 手机框底边离视口底部的距离 */
+    root.style.setProperty("--lift", (gap > 0 ? gap : 0).toFixed(1) + "px");
+  }
+  function schedule() {
+    if (pending) { return; }
+    pending = true;
+    window.requestAnimationFrame(apply);
+  }
+
+  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule, { passive: true });
+  window.addEventListener("load", schedule);
+  if ("ResizeObserver" in window) { new ResizeObserver(schedule).observe(phone); }
+  apply();
+  window.setTimeout(schedule, 300);
 })();

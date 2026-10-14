@@ -72,7 +72,6 @@ body::before {
   background: linear-gradient(to top, rgba(6, 6, 6, .9) 0%, rgba(6, 6, 6, .62) 18%, rgba(6, 6, 6, 0) 56%);
 }
 
-/* 所在团：靠左 */
 .cover .intro__sub {
   position: absolute;
   bottom: 23px;
@@ -86,7 +85,6 @@ body::before {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
-/* 头像：卡在分界线 */
 .cover .avatar--lg {
   position: absolute;
   top: 100%;
@@ -104,13 +102,12 @@ body::before {
   padding: 40px 16px 6px;
 }
 
-/* 名字和标签整体上移，与头像对齐 */
 .intro__head {
   display: flex;
   align-items: center; 
   justify-content: flex-end;
   gap: 12px;
-  padding-right: 82px; /* 防止名字与头像重叠 */
+  padding-right: 82px; 
   margin-top: -60px; 
 }
 
@@ -118,7 +115,7 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px; /* 名字与标签间距缩小 */
+  gap: 2px; 
 }
 .intro__name {
   font-family: "Songti SC", "SimSun", "Noto Serif SC", Georgia, serif;
@@ -131,10 +128,9 @@ body::before {
   justify-content: flex-end;
 }
 
-/* 简介：贴紧右边缘，位于头像下方 */
 .intro .bio {
-  margin: 12px 0 0; /* 与上方名字块拉开距离，确保落到头像下方 */
-  padding: 0; /* 取消右侧内边距，让文字紧靠最右边（16px处） */
+  margin: 12px 0 0; 
+  padding: 0; 
   text-align: right;
   color: var(--ink-2);
   font-size: 13.5px;
@@ -273,50 +269,15 @@ a.post__media:active img { filter: grayscale(1) brightness(.82); }
   color: var(--ink-3);
 }
 
-.to-top {
-  position: fixed;
-  right: max(20px, calc(50% - 210px));
-  bottom: 26px;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  color: var(--ink-2);
-  background: rgba(18, 18, 18, .9);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(12px);
-  transition: opacity .25s ease, transform .25s ease, visibility .25s;
-}
-.to-top.show { opacity: 1; visibility: visible; transform: none; }
-.to-top:active { transform: scale(.9); }
-.to-top svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .post { opacity: 1; }
   .post.in-view { animation: none; }
-  .to-top { transition-duration: .001ms !important; }
 }
 
 @media (max-width: 520px) {
   .stage { padding: 0; }
   .phone { border: 0; border-radius: 0; max-width: 100%; min-height: 100dvh; box-shadow: none; }
   .cover { height: 264px; }
-  .to-top { right: 16px; bottom: 16px; }
 }
 
 .stage { animation: pageIn 1.7s cubic-bezier(.4, 0, .2, 1) both; }
@@ -343,4 +304,99 @@ a.post__media:active img { filter: grayscale(1) brightness(.82); }
 @media (prefers-reduced-motion: reduce) {
   .stage { animation: none; opacity: 1; }
   .rain  { animation: none; opacity: .8; }
+}
+
+/* ------- 音乐播放器（与手机框同宽的固定容器，播放器在内绝对定位） ------- */
+.phone-fixed {
+  position: fixed;
+  left: 50%;
+  bottom: var(--lift, 0px);
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 460px;   /* 与 .phone 最大宽度保持一致 */
+  height: 0;          /* 不占据布局高度 */
+  z-index: 70;
+  pointer-events: none; /* 让空白区域不拦截点击 */
+}
+.music {
+  position: absolute;
+  right: 20px;
+  bottom: 24px;
+  pointer-events: auto; /* 恢复按钮点击 */
+  animation: musicIn 1.3s ease .8s both;
+}
+@keyframes musicIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+.music__btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  color: var(--ink-2);
+  background: rgba(16, 16, 16, .86);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: color .25s ease, border-color .25s ease, transform .2s ease;
+}
+.music__btn:hover { color: var(--ink); border-color: var(--line-2); }
+.music__btn:active { transform: scale(.92); }
+.music.is-playing .music__btn { color: var(--ink); }
+
+.music__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.ring__track { fill: none; stroke: rgba(255, 255, 255, .09); stroke-width: 2; }
+.ring__bar {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: .9;
+}
+
+.music__eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 17px;
+}
+.music__eq i {
+  display: block;
+  width: 2.5px;
+  height: 100%;
+  background: currentColor;
+  border-radius: 2px;
+  transform-origin: center bottom;
+  transform: scaleY(.3);
+  transition: transform .3s ease;
+}
+.music__eq i:nth-child(1) { transform: scaleY(.4); }
+.music__eq i:nth-child(2) { transform: scaleY(.68); }
+.music__eq i:nth-child(3) { transform: scaleY(.5); }
+.music__eq i:nth-child(4) { transform: scaleY(.86); }
+.music.is-playing .music__eq i { animation: eqBounce .9s ease-in-out infinite; }
+.music.is-playing .music__eq i:nth-child(1) { animation-delay: -.60s; }
+.music.is-playing .music__eq i:nth-child(2) { animation-delay: -.15s; }
+.music.is-playing .music__eq i:nth-child(3) { animation-delay: -.80s; }
+.music.is-playing .music__eq i:nth-child(4) { animation-delay: -.35s; }
+@keyframes eqBounce {
+  0%, 100% { transform: scaleY(.32); }
+  50%      { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music { animation: none; }
+  .music.is-playing .music__eq i { animation: none; transform: scaleY(.7); }
 }
